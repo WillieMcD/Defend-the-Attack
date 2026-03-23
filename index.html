@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Defend the Attack</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <img src="logo.png" alt="City of Portsmouth College logo" class="site-logo" />
+
+  <div class="container">
+    <section class="hero">
+      <h1>Defend the Attack</h1>
+      <p>
+        Answer cyber security questions to secure your move. Defend the grid, outplay the attacker,
+        and connect four before the breach succeeds.
+      </p>
+    </section>
+
+    <div class="game-layout">
+      <aside class="panel">
+        <div class="status">
+          <h2>Mission Status</h2>
+          <div id="turnText">Current turn:</div>
+          <div id="turnBadge" class="turn-badge defender-badge">Defender</div>
+          <div class="stat-pill" id="modeText">Mode: Two Player</div>
+          <div class="stat-pill" id="timerText">Question timer: 15s</div>
+        </div>
+
+        <div class="legend">
+          <div class="legend-item">
+            <span class="disc-preview disc-defender"></span>
+            <span><strong>Defender</strong> — protects the system</span>
+          </div>
+          <div class="legend-item">
+            <span class="disc-preview disc-attacker"></span>
+            <span><strong>Attacker</strong> — tries to breach the system</span>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label for="modeSelect">Game mode</label>
+          <select id="modeSelect">
+            <option value="twoPlayer">Two Player</option>
+            <option value="singlePlayer">Single Player vs AI</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label for="difficultySelect">AI difficulty</label>
+          <select id="difficultySelect">
+            <option value="4">Standard</option>
+            <option value="5" selected>Strong</option>
+            <option value="6">Very Strong</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label for="timerSelect">Question timer</label>
+          <select id="timerSelect">
+            <option value="10">10 seconds</option>
+            <option value="15" selected>15 seconds</option>
+            <option value="20">20 seconds</option>
+            <option value="25">25 seconds</option>
+          </select>
+        </div>
+
+        <div style="margin-top: 20px;">
+          <h3>How to play</h3>
+          <ul class="rules-list">
+            <li>Pick a column.</li>
+            <li>Answer the cyber question correctly.</li>
+            <li>If correct, your tile is placed.</li>
+            <li>If wrong, you lose your turn.</li>
+            <li>First to connect 4 wins.</li>
+          </ul>
+        </div>
+
+        <div style="margin-top: 20px;">
+          <h3>Column topics</h3>
+          <ul class="rules-list">
+            <li>Phishing</li>
+            <li>Malware</li>
+            <li>Passwords</li>
+            <li>Social Engineering</li>
+            <li>Network Security</li>
+            <li>Insider Threats</li>
+            <li>Defence Tools</li>
+          </ul>
+        </div>
+
+        <div class="controls">
+          <button id="restartBtn">Restart Game</button>
+          <button id="newQuestionsBtn" class="secondary">Reset Questions</button>
+        </div>
+      </aside>
+
+      <main class="panel board-wrap">
+        <div class="category-row" id="categoryRow"></div>
+        <div class="board" id="board"></div>
+        <div class="message" id="messageBox">
+          Defender starts. Choose a column and answer correctly to secure your move.
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="questionModal">
+    <div class="modal">
+      <div class="question-topbar">
+        <span class="category-tag" id="modalCategory">Category</span>
+        <div class="timer-box">Time left: <span id="questionTimer">15</span>s</div>
+      </div>
+      <h2>Security Check Required</h2>
+      <div class="question-text" id="questionText"></div>
+
+      <div class="answers" id="answersContainer"></div>
+
+      <div class="feedback" id="feedbackBox"></div>
+
+      <div class="modal-actions">
+        <button id="closeModalBtn" style="display:none;">Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
