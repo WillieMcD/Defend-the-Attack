@@ -614,7 +614,10 @@ function performAiTurn() {
     const col = getAiBestMove();
     isAiThinking = false;
 
-    if (col === null || col === undefined) return;
+    if (col === null || col === undefined) {
+      renderBoard();
+      return;
+    }
 
     const category = categories[col];
     const question = getQuestionForCategory(category);
@@ -622,7 +625,7 @@ function performAiTurn() {
 
     if (aiAnswersCorrectly) {
       currentQuestion = question;
-      pendingColumn = col;
+      pendingColumn = null;
       setMessage(`Attacker AI answered a ${category} question correctly and is making a move.`);
       placeMove(col);
     } else {
@@ -630,6 +633,7 @@ function performAiTurn() {
       swapPlayer();
     }
 
+    pendingColumn = null;
     renderBoard();
   }, 800);
 }
