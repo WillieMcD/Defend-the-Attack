@@ -1,0 +1,8 @@
+Category,Question,Option A,Option B,Option C,Option D,Correct Answer,Explanation
+Phishing,Which sign most strongly suggests an email is phishing?,It includes a company logo,It creates urgency and asks you to click a link,It arrives in the morning,It uses a greeting,B,Urgency plus a suspicious link is a common phishing tactic.
+Malware,What is ransomware?,Software that improves internet speed,Malware that locks files and demands payment,A type of firewall,A secure backup system,B,Ransomware blocks access to files or systems and demands payment.
+Passwords,Which password is strongest?,password123,Summer2024,Blue!Rocket#47Lake,football1,C,A long unpredictable password with variety is strongest.
+Social Engineering,Social engineering attacks mainly target what?,Monitor cables,Human behaviour,Wi-Fi speed,Printer drivers,B,Social engineering manipulates people rather than systems.
+Network Security,What does a firewall do?,Stores passwords,Filters and blocks network traffic,Creates email accounts,Improves screen brightness,B,A firewall monitors and filters inbound and outbound traffic.
+Insider Threats,An insider threat usually comes from:,Only outside hackers,Staff or users with legitimate access,Only damaged routers,Only antivirus tools,B,Insider threats involve people who already have access.
+Defence Tools,What is the purpose of regular software updates?,To make phishing harder to spot,To patch vulnerabilities and improve security,To remove usernames,To disable backups,B,Updates fix known weaknesses that attackers could exploit.

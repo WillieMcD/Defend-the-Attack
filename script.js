@@ -9,7 +9,7 @@ const PLAYERS = {
 const HUMAN_PLAYER = "defender";
 const AI_PLAYER = "attacker";
 
-const categories = [
+let categories = [
   "Phishing",
   "Malware",
   "Passwords",
@@ -19,7 +19,7 @@ const categories = [
   "Defence Tools"
 ];
 
-const questionBank = {
+let questionBank = {
   "Phishing": [
     { question: "Which sign most strongly suggests an email is phishing?", options: ["It includes a company logo", "It creates urgency and asks you to click a link", "It arrives in the morning", "It uses a greeting"], answer: 1, explanation: "Urgency plus a suspicious link is a common phishing tactic." },
     { question: "What should you do first if you suspect a phishing email?", options: ["Forward it to friends", "Click the link to check it", "Report it and avoid clicking anything", "Reply asking if it is real"], answer: 2, explanation: "Do not interact with the email. Report it through the correct process." },
@@ -120,6 +120,7 @@ let timerInterval = null;
 
 const boardEl = document.getElementById("board");
 const categoryRowEl = document.getElementById("categoryRow");
+const categoryListEl = document.getElementById("categoryList");
 const messageBox = document.getElementById("messageBox");
 const turnText = document.getElementById("turnText");
 const turnBadge = document.getElementById("turnBadge");
@@ -137,6 +138,8 @@ const questionTimerEl = document.getElementById("questionTimer");
 const modeSelect = document.getElementById("modeSelect");
 const difficultySelect = document.getElementById("difficultySelect");
 const timerSelect = document.getElementById("timerSelect");
+const questionUpload = document.getElementById("questionUpload");
+const uploadStatus = document.getElementById("uploadStatus");
 
 document.getElementById("restartBtn").addEventListener("click", restartGame);
 document.getElementById("newQuestionsBtn").addEventListener("click", resetQuestionsOnly);
@@ -153,6 +156,8 @@ timerSelect.addEventListener("change", () => {
   questionTimerLength = parseInt(timerSelect.value, 10);
   timerText.textContent = `Question timer: ${questionTimerLength}s`;
 });
+
+questionUpload.addEventListener("change", handleQuestionUpload);
 
 function createEmptyBoard() {
   return Array.from({ length: ROWS }, () => Array(COLS).fill(null));
@@ -206,11 +211,17 @@ function resetQuestionsOnly() {
 
 function renderCategories() {
   categoryRowEl.innerHTML = "";
+  categoryListEl.innerHTML = "";
+
   categories.forEach(category => {
     const div = document.createElement("div");
     div.className = "category";
     div.textContent = category;
     categoryRowEl.appendChild(div);
+
+    const listItem = document.createElement("li");
+    listItem.textContent = category;
+    categoryListEl.appendChild(listItem);
   });
 }
 
@@ -271,7 +282,8 @@ function handleColumnClick(col) {
 }
 
 function getQuestionForCategory(category) {
-  const allQuestions = questionBank[category];
+  const allQuestions = questionBank[category] || getAllQuestions();
+  if (!usedQuestions[category]) usedQuestions[category] = [];
   if (usedQuestions[category].length === allQuestions.length) usedQuestions[category] = [];
 
   const availableIndexes = allQuestions
@@ -281,6 +293,10 @@ function getQuestionForCategory(category) {
   const randomIndex = availableIndexes[Math.floor(Math.random() * availableIndexes.length)];
   usedQuestions[category].push(randomIndex);
   return allQuestions[randomIndex];
+}
+
+function getAllQuestions() {
+  return Object.values(questionBank).flat();
 }
 
 function openQuestionModal(category, question) {
@@ -636,6 +652,214 @@ function performAiTurn() {
     pendingColumn = null;
     renderBoard();
   }, 800);
+}
+
+
+function handleQuestionUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  if (!file.name.toLowerCase().endsWith(".csv")) {
+    showUploadStatus("Please upload a CSV file. In Excel, use File > Save As > CSV UTF-8.", "error");
+    questionUpload.value = "";
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const parsed = parseQuestionCsv(String(reader.result || ""));
+      applyCustomQuestionBank(parsed.categories, parsed.questionBank, file.name);
+    } catch (error) {
+      showUploadStatus(error.message, "error");
+      questionUpload.value = "";
+    }
+  };
+  reader.onerror = () => {
+    showUploadStatus("The file could not be read. Try saving it again as CSV UTF-8.", "error");
+  };
+  reader.readAsText(file);
+}
+
+function parseQuestionCsv(csvText) {
+  const rows = parseCsvRows(csvText).filter(row => row.some(cell => String(cell).trim() !== ""));
+  if (rows.length < 2) {
+    throw new Error("The spreadsheet needs a header row and at least one question row.");
+  }
+
+  const headers = rows[0].map(normaliseHeader);
+  const requiredHeaders = ["category", "question", "option a", "option b", "option c", "option d", "correct answer"];
+  const missing = requiredHeaders.filter(header => !headers.includes(header));
+
+  if (missing.length) {
+    throw new Error(`Missing column(s): ${missing.join(", ")}. Download the template and keep the headings the same.`);
+  }
+
+  const columnIndex = name => headers.indexOf(name);
+  const categoryIndex = columnIndex("category");
+  const questionIndex = columnIndex("question");
+  const optionIndexes = [columnIndex("option a"), columnIndex("option b"), columnIndex("option c"), columnIndex("option d")];
+  const answerIndex = columnIndex("correct answer");
+  const explanationIndex = headers.indexOf("explanation");
+
+  const importedBank = {};
+  const importedCategories = [];
+  const skippedRows = [];
+
+  rows.slice(1).forEach((row, rowOffset) => {
+    const spreadsheetRowNumber = rowOffset + 2;
+    const category = cleanCell(row[categoryIndex]);
+    const question = cleanCell(row[questionIndex]);
+    const options = optionIndexes.map(index => cleanCell(row[index]));
+    const correctAnswerRaw = cleanCell(row[answerIndex]);
+    const explanation = explanationIndex >= 0 ? cleanCell(row[explanationIndex]) : "";
+
+    if (!category && !question && options.every(option => !option) && !correctAnswerRaw) return;
+
+    if (!category || !question || options.some(option => !option) || !correctAnswerRaw) {
+      skippedRows.push(spreadsheetRowNumber);
+      return;
+    }
+
+    const answer = parseCorrectAnswer(correctAnswerRaw, options);
+    if (answer === -1) {
+      skippedRows.push(spreadsheetRowNumber);
+      return;
+    }
+
+    if (!importedBank[category]) {
+      importedBank[category] = [];
+      importedCategories.push(category);
+    }
+
+    importedBank[category].push({
+      question,
+      options,
+      answer,
+      explanation: explanation || "This question was loaded from the staff question spreadsheet."
+    });
+  });
+
+  const totalQuestions = Object.values(importedBank).reduce((sum, questions) => sum + questions.length, 0);
+  if (totalQuestions < 7) {
+    throw new Error("The spreadsheet needs at least 7 valid questions. Aim for at least one question per column.");
+  }
+
+  const sevenColumnCategories = buildSevenColumnCategories(importedCategories, importedBank);
+  const sevenColumnBank = {};
+
+  sevenColumnCategories.forEach(category => {
+    sevenColumnBank[category] = importedBank[category] || getAllImportedQuestions(importedBank);
+  });
+
+  return {
+    categories: sevenColumnCategories,
+    questionBank: sevenColumnBank,
+    totalQuestions,
+    skippedRows
+  };
+}
+
+function buildSevenColumnCategories(importedCategories, importedBank) {
+  if (importedCategories.length >= COLS) {
+    return importedCategories.slice(0, COLS);
+  }
+
+  const categoriesToUse = [...importedCategories];
+  while (categoriesToUse.length < COLS) {
+    categoriesToUse.push(`Mixed ${categoriesToUse.length + 1}`);
+  }
+
+  const mixedQuestions = getAllImportedQuestions(importedBank);
+  categoriesToUse.forEach(category => {
+    if (!importedBank[category]) importedBank[category] = mixedQuestions;
+  });
+
+  return categoriesToUse;
+}
+
+function getAllImportedQuestions(importedBank) {
+  return Object.values(importedBank).flat();
+}
+
+function applyCustomQuestionBank(newCategories, newQuestionBank, filename) {
+  categories = newCategories;
+  questionBank = newQuestionBank;
+  resetUsedQuestions();
+  restartGame();
+  renderCategories();
+
+  const questionCount = Object.values(questionBank).reduce((sum, questions) => sum + questions.length, 0);
+  showUploadStatus(`Loaded ${questionCount} questions from ${filename}. The game is now using the uploaded question spreadsheet.`, "success");
+}
+
+function showUploadStatus(message, type) {
+  uploadStatus.textContent = message;
+  uploadStatus.className = `upload-status ${type || ""}`.trim();
+}
+
+function normaliseHeader(value) {
+  return cleanCell(value).toLowerCase().replace(/\s+/g, " ");
+}
+
+function cleanCell(value) {
+  return String(value ?? "").trim().replace(/^\uFEFF/, "");
+}
+
+function parseCorrectAnswer(value, options) {
+  const cleaned = cleanCell(value);
+  const lower = cleaned.toLowerCase();
+
+  const letterMap = { a: 0, b: 1, c: 2, d: 3 };
+  if (Object.prototype.hasOwnProperty.call(letterMap, lower)) return letterMap[lower];
+
+  const number = Number(cleaned);
+  if (Number.isInteger(number) && number >= 1 && number <= 4) return number - 1;
+
+  return options.findIndex(option => option.toLowerCase() === lower);
+}
+
+function parseCsvRows(text) {
+  const rows = [];
+  let row = [];
+  let cell = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    const nextChar = text[i + 1];
+
+    if (char === '"') {
+      if (inQuotes && nextChar === '"') {
+        cell += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+
+    if (char === ',' && !inQuotes) {
+      row.push(cell);
+      cell = "";
+      continue;
+    }
+
+    if ((char === "\n" || char === "\r") && !inQuotes) {
+      if (char === "\r" && nextChar === "\n") i++;
+      row.push(cell);
+      rows.push(row);
+      row = [];
+      cell = "";
+      continue;
+    }
+
+    cell += char;
+  }
+
+  row.push(cell);
+  rows.push(row);
+  return rows;
 }
 
 init();

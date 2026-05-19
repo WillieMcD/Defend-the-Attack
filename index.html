@@ -79,15 +79,16 @@
 
         <div style="margin-top: 20px;">
           <h3>Column topics</h3>
-          <ul class="rules-list">
-            <li>Phishing</li>
-            <li>Malware</li>
-            <li>Passwords</li>
-            <li>Social Engineering</li>
-            <li>Network Security</li>
-            <li>Insider Threats</li>
-            <li>Defence Tools</li>
-          </ul>
+          <ul class="rules-list" id="categoryList"></ul>
+        </div>
+
+        <div class="question-upload">
+          <h3>Create your own game</h3>
+          <p>Upload a CSV spreadsheet to replace the built-in cyber security questions.</p>
+          <label class="file-upload-label" for="questionUpload">Upload question spreadsheet</label>
+          <input id="questionUpload" type="file" accept=".csv,text/csv" />
+          <a class="template-link" href="questions_template.csv" download>Download CSV template</a>
+          <div class="upload-status" id="uploadStatus">Using built-in cyber security questions.</div>
         </div>
 
         <div class="controls">
